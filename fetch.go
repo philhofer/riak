@@ -2,6 +2,7 @@ package riak
 
 import (
 	"bufio"
+	"net/http"
 	"net/url"
 )
 
@@ -9,14 +10,14 @@ type ErrMultipleVclocks struct {
 	Vclocks []string
 }
 
-func (e *ErrMultipleVclocks) Error() {
+func (e *ErrMultipleVclocks) Error() string {
 	return "Error: Multiple Choices"
 }
 
 func multiple(res *http.Response) error {
 	rd := bufio.NewReader(res.Body)
 	e := new(ErrMultipleVclocks)
-	for line, err := rb.ReadString("\n"); err != nil; {
+	for line, err := rd.ReadString('\n'); err != nil; {
 		if line == "Siblings:" {
 			continue
 		}
@@ -59,4 +60,28 @@ func (c *Client) Fetch(path string, opts map[string]string) (*Object, error) {
 	o := new(Object)
 	err = o.fromResponse(res)
 	return o, err
+}
+
+// Update writes the latest values stored in the database
+// to the object
+func (c *Client) Update(o *Object, opts map[string]string) error {
+	req, err := c.req("GET", o.path(), nil)
+	if err != nil {
+		return err
+	}
+
+	if opts != nil {
+		var query url.Values
+		for key, val := range opts {
+			query.Set(key, val)
+		}
+		req.htr.URL.RawQuery = query.Encode()
+	}
+
+	res, err := c.doreq(req)
+	if err != nil {
+		return err
+	}
+	err = o.fromResponse(res)
+	return nil
 }

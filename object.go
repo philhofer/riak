@@ -8,14 +8,20 @@ import (
 
 // Object is a Riak object
 type Object struct {
-	Ctype        *string     //Content-Type
-	Vclock       *string     //Vclock
-	ETag         *string     //Etag
+	Bucket       string
+	Key          string
+	Ctype        string      //Content-Type
+	Vclock       string      //Vclock
+	ETag         string      //Etag
 	LastModified time.Time   //Last-Modified
 	Links        []Link      // Link: <>
 	Meta         [][2]string // X-Riak-Meta-*
 	Index        [][2]string // X-Riak-Index-*
 	Body         io.Reader   // Body
+}
+
+func (o *Object) path() string {
+	return "/buckets/" + o.Bucket + "/keys/" + o.Key
 }
 
 func (o *Object) fromResponse(res *http.Response) error {
@@ -27,4 +33,8 @@ type Link struct {
 	Tagname string
 	Bucket  string
 	Key     string
+}
+
+func (o *Object) header() map[string]string {
+
 }
