@@ -5,16 +5,18 @@ import (
 	"net/http"
 )
 
-func NewClient(host string) *Client {
+func NewClient(host string, clientID string) *Client {
 	return &Client{
 		cl:   &http.Client{},
 		host: host,
+		id:   clientID,
 	}
 }
 
 type Client struct {
 	cl   *http.Client
 	host string
+	id   string
 }
 
 func (c *Client) do(method string, path string, body io.Reader) (*http.Response, error) {

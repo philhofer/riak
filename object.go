@@ -36,7 +36,7 @@ type Object struct {
 }
 
 func (o *Object) path() string {
-	return "/buckets/" + o.Bucket + "/keys/" + o.Key
+	return "/riak/" + o.Bucket + "/" + o.Key
 }
 
 func (o *Object) hardReset() {
@@ -61,7 +61,7 @@ func (o *Object) hardReset() {
 }
 
 // read response headers and body
-func (o *Object) fromResponse(res *http.Response) error {
+func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error {
 	// clear existing values
 	if o.Links != nil {
 		for key := range o.Links {
@@ -83,7 +83,7 @@ func (o *Object) fromResponse(res *http.Response) error {
 	}
 
 	// parse header
-	for key, vals := range res.Header {
+	for key, vals := range hdr {
 		switch key {
 		case "Content-Type":
 			o.Ctype = vals[0]
@@ -93,7 +93,7 @@ func (o *Object) fromResponse(res *http.Response) error {
 		case "X-Riak-Vclock":
 			o.Vclock = vals[0]
 			continue
-		case "ETag":
+		case "Etag":
 			o.eTag = vals[0]
 			continue
 		case "Link":
@@ -120,11 +120,11 @@ func (o *Object) fromResponse(res *http.Response) error {
 
 		}
 	}
-	if res.Body == nil {
+	if body == nil {
 		return nil
 	}
-	_, err := io.Copy(o.Body, res.Body)
-	res.Body.Close()
+	_, err := io.Copy(o.Body, body)
+	body.Close()
 	return err
 }
 
@@ -180,9 +180,7 @@ func (o *Object) writeheader(hd http.Header) {
 	}
 
 	if o.eTag != "" {
-		// We can't call Set here, because
-		// net/textproto de-capitalizes the 'T'!
-		hd["ETag"] = []string{o.eTag}
+		hd.Set("Etag", o.eTag)
 	}
 
 	if o.lastModified.Unix() != 0 {

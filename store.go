@@ -31,6 +31,7 @@ func (c *Client) Merge(o *Object, opts map[string]string) error {
 
 	o.writeheader(req.Header)
 	req.Header.Set("If-Match", o.eTag)
+	req.Header.Set("X-Riak-ClientId", c.id)
 
 	res, err := c.cl.Do(req)
 	if err != nil {
@@ -75,6 +76,7 @@ func (c *Client) Store(o *Object, opts map[string]string) error {
 	req.URL.RawQuery = query.Encode()
 
 	o.writeheader(req.Header)
+	req.Header.Set("X-Riak-ClientId", c.id)
 
 	res, err := c.cl.Do(req)
 	if err != nil {

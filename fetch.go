@@ -27,6 +27,7 @@ func (c *Client) Fetch(path string, opts map[string]string) (*Object, error) {
 		}
 		req.URL.RawQuery = query.Encode()
 	}
+	req.Header.Set("X-Riak-ClientId", c.id)
 
 	res, err := c.cl.Do(req)
 	if err != nil {
@@ -57,6 +58,7 @@ func (c *Client) GetUpdate(o *Object, opts map[string]string) (bool, error) {
 	}
 
 	req.Header.Set("If-None-Match", o.eTag)
+	req.Header.Set("X-Riak-ClientId", c.id)
 
 	o.writeheader(req.Header)
 

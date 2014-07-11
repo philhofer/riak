@@ -1,8 +1,6 @@
 package riak
 
 import (
-	//"bytes"
-	//"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
@@ -16,8 +14,8 @@ func TestObjectPath(t *testing.T) {
 	}
 
 	path := obj.path()
-	if path != "/buckets/blah/keys/12347" {
-		t.Fatalf("Path should be %q; got %q", "/buckets/blah/keys/12347", path)
+	if path != "/riak/blah/12347" {
+		t.Fatalf("Path should be %q; got %q", "/riak/blah/12347", path)
 	}
 }
 
@@ -40,7 +38,7 @@ func TestObjectWriteHeader(t *testing.T) {
 	wanted := http.Header{
 		"Content-Type":          []string{obj.Ctype},
 		"X-Riak-Vclock":         []string{obj.Vclock},
-		"ETag":                  []string{obj.eTag},
+		"Etag":                  []string{obj.eTag},
 		"Last-Modified":         []string{tm.Format(time.RFC1123)},
 		"Link":                  []string{"</riak/blah/rs1>; riaktag=\"result\""},
 		"X-Riak-Meta-Agent":     []string{"testing"},
