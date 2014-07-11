@@ -22,6 +22,6 @@ func (c *Client) do(method string, path string, body io.Reader) (*http.Response,
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.htc.Do(req)
+	res, err := c.cl.Do(req)
 	return res, err
 }

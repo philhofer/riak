@@ -5,16 +5,16 @@ import (
 	"net/url"
 )
 
-// Store puts an object into the database at /buckets/bucket/keys/key
+// Merge puts an object into the database at /buckets/bucket/keys/key
 // Valid opts are:
 // - 'w':(number) write quorum
 // - 'dw':(number) durable write quorum
 // - 'pw':(number) primary replicas
-// Store is successful ONLY if the object in question has not been changed
+// Merge is successful ONLY if the object in question has not been changed
 // since the last read. ErrModified is returned if there has been a change
 // since 'o' has been retrieved. You can call c.GetUpdate and then re-try
 // the store.
-func (c *Client) Store(o *Object, opts map[string]string) error {
+func (c *Client) Merge(o *Object, opts map[string]string) error {
 	//TODO
 	req, err := http.NewRequest("PUT", o.path(), o.Body)
 	if err != nil {
@@ -39,6 +39,11 @@ func (c *Client) Store(o *Object, opts map[string]string) error {
 
 	switch res.StatusCode {
 	case 201, 200, 204:
+		// read new vclock
+		vclk := res.Header.Get("X-Riak-Vclock")
+		if vclk != "" {
+			o.Vclock = vclk
+		}
 		res.Body.Close()
 		return nil
 	case 400:
@@ -46,7 +51,6 @@ func (c *Client) Store(o *Object, opts map[string]string) error {
 		return ErrBadRequest
 	case 300:
 		err = multiple(res)
-		res.Body.Close()
 		return err
 	case 412:
 		return ErrModified
@@ -55,9 +59,8 @@ func (c *Client) Store(o *Object, opts map[string]string) error {
 	}
 }
 
-// Create stores a new object at 'path'. This does an overwrite
-// if an object already exists at the object key.
-func (c *Client) Create(o *Object, opts map[string]string) error {
+// Store stores a new object at 'path'.
+func (c *Client) Store(o *Object, opts map[string]string) error {
 	req, err := http.NewRequest("PUT", o.path(), o.Body)
 	if err != nil {
 		return err
@@ -68,7 +71,7 @@ func (c *Client) Create(o *Object, opts map[string]string) error {
 			query.Set(key, val)
 		}
 	}
-	query.Set("returnbody", "false")
+	query.Set("returnbody", "true")
 	req.URL.RawQuery = query.Encode()
 
 	o.writeheader(req.Header)
@@ -90,8 +93,10 @@ func (c *Client) Create(o *Object, opts map[string]string) error {
 		res.Body.Close()
 		return err
 	case 412:
+		res.Body.Close()
 		return ErrModified
 	default:
+		res.Body.Close()
 		return statusCode(res.StatusCode)
 	}
 }

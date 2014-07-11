@@ -72,6 +72,9 @@ func (c *Client) GetUpdate(o *Object, opts map[string]string) (bool, error) {
 		res.Body.Close()
 		return false, nil
 
+	case 300:
+		return false, multiple(res)
+
 	case 200:
 		// modified
 		err = o.fromResponse(res)

@@ -4,18 +4,25 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 )
 
+var linkrgx *regexp.Regexp
+
+func init() {
+	linkrgx = regexp.MustCompile("(</riak/(.*?)/(.*?)>;\\sriaktag=\"(.*?)\")")
+}
+
 // Object is a Riak object
 type Object struct {
-	Bucket       string            //Object bucket
-	Key          string            //Object key
-	Ctype        string            //Content-Type
-	Vclock       string            //Vclock
-	eTag         string            //Etag
-	lastModified time.Time         //Last-Modified
+	Bucket       string            // Object bucket
+	Key          string            // Object key
+	Ctype        string            // Content-Type
+	Vclock       string            // Vclock
+	eTag         string            // Etag
+	lastModified time.Time         // Last-Modified
 	Links        map[string]Link   // Link: <>
 	Meta         map[string]string // X-Riak-Meta-*
 	Index        map[string]string // X-Riak-Index-*
@@ -115,13 +122,37 @@ type Link struct {
 }
 
 func parseLinks(str string, links map[string]Link) {
-
+	doesmatch := linkrgx.MatchString(str)
+	if !doesmatch {
+		links = nil
+	}
+	matches := linkrgx.FindAllStringSubmatch(str, -1)
+	for _, match := range matches {
+		if len(match) < 5 {
+			continue
+		}
+		links[match[4]] = Link{Bucket: match[2], Key: match[3]}
+	}
 	return
 }
 
 func formatLinks(links map[string]Link) string {
-
-	return ""
+	i := 0
+	buf := bytes.NewBuffer(make([]byte, 64))
+	for key, link := range links {
+		if i > 0 {
+			buf.WriteString(", ")
+		}
+		buf.WriteString("</riak")
+		buf.WriteString(link.Bucket)
+		buf.WriteByte('/')
+		buf.WriteString(link.Key)
+		buf.WriteString("/>; riaktag=\"")
+		buf.WriteString(key)
+		buf.WriteString("\"")
+		i++
+	}
+	return buf.String()
 }
 
 func (o *Object) writeheader(hd http.Header) {
@@ -138,7 +169,7 @@ func (o *Object) writeheader(hd http.Header) {
 		hd.Set("ETag", o.eTag)
 	}
 
-	if o.lastModified != 0 {
+	if o.lastModified.Unix() != 0 {
 		hd.Set("Last-Modified", o.lastModified.Format(time.RFC1123))
 	}
 
@@ -158,5 +189,4 @@ func (o *Object) writeheader(hd http.Header) {
 		}
 	}
 
-	return out
 }

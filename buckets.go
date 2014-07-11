@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 )
 
 // GetBuckets gets a list of the buckets
@@ -112,13 +113,13 @@ func (c *Client) SetBucketProps(bucket string, props *BucketProps) error {
 		return err
 	}
 
-	r, err := c.req("PUT", "/buckets/"+bucket+"/props", buf)
+	r, err := http.NewRequest("PUT", c.host+"/buckets/"+bucket+"/props", buf)
 	if err != nil {
 		return err
 	}
 
-	r.htr.Header.Set("Content-Type", "application/json")
-	res, err := c.doreq(r)
+	r.Header.Set("Content-Type", "application/json")
+	res, err := c.cl.Do(r)
 	if res.Body != nil {
 		res.Body.Close()
 	}
@@ -131,7 +132,7 @@ func (c *Client) SetBucketProps(bucket string, props *BucketProps) error {
 		return nil
 		//otherwise
 	default:
-		return fmt.Errorf("Status Code %d", res.StatusCode)
+		return statusCode(res.StatusCode)
 	}
 }
 
@@ -147,6 +148,6 @@ func (c *Client) ResetBucketProps(bucket string) error {
 	case 204:
 		return nil
 	default:
-		return fmt.Errorf("Status Code %d", res.StatusCode)
+		return statusCode(res.StatusCode)
 	}
 }
