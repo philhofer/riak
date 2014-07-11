@@ -9,10 +9,16 @@ import (
 	"time"
 )
 
-var linkrgx *regexp.Regexp
+var (
+	linkrgx *regexp.Regexp
+)
 
 func init() {
-	linkrgx = regexp.MustCompile("(</riak/(.*?)/(.*?)>;\\sriaktag=\"(.*?)\")")
+	rgx, err := regexp.Compile("(</riak/(.*?)/(.*?)>;\\sriaktag=\"(.*?)\")")
+	if err != nil {
+		panic(err)
+	}
+	linkrgx = rgx
 }
 
 // Object is a Riak object
@@ -72,7 +78,9 @@ func (o *Object) fromResponse(res *http.Response) error {
 			delete(o.Index, key)
 		}
 	}
-	o.Body.Reset()
+	if o.Body != nil {
+		o.Body.Reset()
+	}
 
 	// parse header
 	for key, vals := range res.Header {
@@ -89,7 +97,9 @@ func (o *Object) fromResponse(res *http.Response) error {
 			o.eTag = vals[0]
 			continue
 		case "Link":
-			parseLinks(vals[0], o.Links)
+			for _, val := range vals {
+				parseLinks(val, &o.Links)
+			}
 		}
 		switch {
 		case strings.HasPrefix(key, "X-Riak-Meta-"):
@@ -110,7 +120,9 @@ func (o *Object) fromResponse(res *http.Response) error {
 
 		}
 	}
-
+	if res.Body == nil {
+		return nil
+	}
 	_, err := io.Copy(o.Body, res.Body)
 	res.Body.Close()
 	return err
@@ -121,33 +133,35 @@ type Link struct {
 	Key    string
 }
 
-func parseLinks(str string, links map[string]Link) {
-	doesmatch := linkrgx.MatchString(str)
-	if !doesmatch {
-		links = nil
-	}
+func parseLinks(str string, links *map[string]Link) {
 	matches := linkrgx.FindAllStringSubmatch(str, -1)
+	if len(matches) == 0 {
+		return
+	}
+	if links == nil || *links == nil {
+		*links = make(map[string]Link)
+	}
 	for _, match := range matches {
 		if len(match) < 5 {
-			continue
+			panic("match length < 5")
 		}
-		links[match[4]] = Link{Bucket: match[2], Key: match[3]}
+		(*links)[match[4]] = Link{Bucket: match[2], Key: match[3]}
 	}
 	return
 }
 
 func formatLinks(links map[string]Link) string {
 	i := 0
-	buf := bytes.NewBuffer(make([]byte, 64))
+	buf := bytes.NewBuffer(make([]byte, 64)[0:0])
 	for key, link := range links {
 		if i > 0 {
 			buf.WriteString(", ")
 		}
-		buf.WriteString("</riak")
+		buf.WriteString("</riak/")
 		buf.WriteString(link.Bucket)
 		buf.WriteByte('/')
 		buf.WriteString(link.Key)
-		buf.WriteString("/>; riaktag=\"")
+		buf.WriteString(">; riaktag=\"")
 		buf.WriteString(key)
 		buf.WriteString("\"")
 		i++
@@ -166,7 +180,9 @@ func (o *Object) writeheader(hd http.Header) {
 	}
 
 	if o.eTag != "" {
-		hd.Set("ETag", o.eTag)
+		// We can't call Set here, because
+		// net/textproto de-capitalizes the 'T'!
+		hd["ETag"] = []string{o.eTag}
 	}
 
 	if o.lastModified.Unix() != 0 {
