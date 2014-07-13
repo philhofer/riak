@@ -78,7 +78,7 @@ func TestObjectReadHeader(t *testing.T) {
 
 	newobj := new(Object)
 
-	err := newobj.fromResponse(res)
+	err := newobj.fromResponse(res.Header, res.Body)
 	if err != nil {
 		t.Fatal(err)
 	}

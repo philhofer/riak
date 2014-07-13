@@ -84,6 +84,9 @@ func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error
 
 	// parse header
 	for key, vals := range hdr {
+		if len(vals) < 1 {
+			continue
+		}
 		switch key {
 		case "Content-Type":
 			o.Ctype = vals[0]

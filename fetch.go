@@ -37,7 +37,7 @@ func (c *Client) Fetch(path string, opts map[string]string) (*Object, error) {
 		return nil, multiple(res)
 	}
 	o := newObj()
-	err = o.fromResponse(res)
+	err = o.fromResponse(res.Header, res.Body)
 	return o, err
 }
 
@@ -79,7 +79,7 @@ func (c *Client) GetUpdate(o *Object, opts map[string]string) (bool, error) {
 
 	case 200:
 		// modified
-		err = o.fromResponse(res)
+		err = o.fromResponse(res.Header, res.Body)
 		return true, err
 
 	case 400:

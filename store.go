@@ -85,7 +85,7 @@ func (c *Client) Store(o *Object, opts map[string]string) error {
 
 	switch res.StatusCode {
 	case 201, 200, 204:
-		err = o.fromResponse(res)
+		err = o.fromResponse(res.Header, res.Body)
 		return err
 	case 400:
 		res.Body.Close()

@@ -41,6 +41,7 @@ func (c *Client) FollowLink(o *Object, name string) ([]*Object, error) {
 		return nil, err
 	}
 
+	var deferError error
 	if strings.HasPrefix(mtype, "multipart/") {
 		mpr := multipart.NewReader(res.Body, params["boundary"])
 		for {
@@ -54,18 +55,24 @@ func (c *Client) FollowLink(o *Object, name string) ([]*Object, error) {
 			}
 
 			o := newObj()
-			// TODO
-			// TODO
-			// TODO
-			// TODO
-			//
+			err = o.fromResponse(part.Header, part)
+			if err != nil {
+				deferError = err
+				continue
+			}
 		}
+	} else {
+		o := newObj()
+		err = o.fromResponse(res.Header, res.Body)
+		objs = append(objs, o)
+		return objs, err
 	}
-	return nil, nil
+	return objs, deferError
 }
 
 func linkpath(o *Object, name string, link Link) string {
-	buf := bytes.NewBuffer(nil)
+	var stack [64]byte
+	buf := bytes.NewBuffer(stack[0:0])
 	buf.WriteString("/riak/")
 	buf.WriteString(o.Bucket)
 	buf.WriteByte('/')
