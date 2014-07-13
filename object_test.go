@@ -1,6 +1,7 @@
 package riak
 
 import (
+	"bytes"
 	"net/http"
 	"reflect"
 	"testing"
@@ -88,5 +89,34 @@ func TestObjectReadHeader(t *testing.T) {
 		t.Errorf("Expected: %#v\n", obj)
 		t.Errorf("Got: %#v\n", newobj)
 	}
+	Release(newobj)
+}
 
+func TestObjectHardReset(t *testing.T) {
+	tm := time.Now()
+	obj := &Object{
+		Ctype:        "text/plain",
+		Vclock:       "125g85gu90[g89-]",
+		eTag:         "h801235hi0ggasty890",
+		lastModified: tm,
+		Links:        map[string]Link{"result": {Bucket: "blah", Key: "rs1"}, "other": {Bucket: "things", Key: "j90"}},
+		Meta:         map[string]string{"Agent": "testing"},
+		Index:        map[string]string{"Username": "Bob"},
+		Body:         bytes.NewBuffer(nil),
+	}
+
+	resetobj := &Object{
+		Body: bytes.NewBuffer(nil),
+	}
+
+	obj.hardReset()
+
+	if !objectEqual(obj, resetobj) {
+		t.Error("Objects are not equivalent.")
+		t.Errorf("obj: %#v", obj)
+		t.Errorf("resetobj: %#v", resetobj)
+	}
+
+	Release(obj)
+	Release(resetobj)
 }

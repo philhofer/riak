@@ -35,6 +35,164 @@ type Object struct {
 	Body         *bytes.Buffer     // Body
 }
 
+func objectEqual(on *Object, of *Object) bool {
+	if on == of {
+		return true
+	}
+
+	if on.Bucket != of.Bucket || on.Key != of.Key || on.Ctype != of.Ctype || on.Vclock != of.Vclock || on.eTag != of.eTag {
+		return false
+	}
+
+	if !on.lastModified.Equal(of.lastModified) {
+		return false
+	}
+
+	// we're treating nil maps and empty maps as the same
+	if on.Links == nil {
+		if of.Links != nil {
+			if len(of.Links) == 0 {
+				goto meta
+			}
+			return false
+		} else {
+			goto meta
+		}
+	} else if of.Links == nil {
+		if len(on.Links) == 0 {
+			goto meta
+		}
+		return false
+	}
+
+	if len(on.Links) != len(of.Links) {
+		return false
+	}
+
+	for key, val := range on.Links {
+		tval, ok := of.Links[key]
+		if !ok {
+			return false
+		}
+		if tval != val {
+			return false
+		}
+	}
+
+	for key, val := range of.Links {
+		tval, ok := on.Links[key]
+		if !ok {
+			return false
+		}
+		if tval != val {
+			return false
+		}
+	}
+
+	// META
+meta:
+	if on.Meta == nil {
+		if of.Meta != nil {
+			if len(of.Meta) == 0 {
+				goto index
+			}
+			return false
+		} else {
+			goto index
+		}
+	} else if of.Meta == nil {
+		if len(on.Meta) == 0 {
+			goto index
+		}
+		return false
+	}
+
+	if len(on.Meta) != len(of.Meta) {
+		return false
+	}
+
+	for key, val := range on.Meta {
+		tval, ok := of.Meta[key]
+		if !ok {
+			return false
+		}
+		if tval != val {
+			return false
+		}
+	}
+
+	for key, val := range of.Meta {
+		tval, ok := on.Meta[key]
+		if !ok {
+			return false
+		}
+		if tval != val {
+			return false
+		}
+	}
+
+index:
+	if on.Index == nil {
+		if of.Index == nil {
+			goto body
+		} else if len(of.Index) == 0 {
+			goto body
+		}
+		return false
+	} else if of.Index == nil {
+		if len(on.Index) == 0 {
+			goto body
+		}
+		return false
+	}
+
+	for key, val := range on.Index {
+		tval, ok := of.Index[key]
+		if !ok {
+			return false
+		}
+		if tval != val {
+			return false
+		}
+	}
+
+	for key, val := range of.Index {
+		tval, ok := on.Index[key]
+		if !ok {
+			return false
+		}
+		if tval != val {
+			return false
+		}
+	}
+
+body:
+	if on.Body == nil {
+		if of.Body == nil {
+			return true
+		} else if len(of.Body.Bytes()) == 0 {
+			return true
+		}
+		return false
+	} else if of.Body == nil {
+		if len(on.Body.Bytes()) == 0 {
+			return true
+		}
+		return false
+	}
+	if len(on.Body.Bytes()) != len(of.Body.Bytes()) {
+		return false
+	}
+	abts, bbts := on.Body.Bytes(), of.Body.Bytes()
+	for i, v := range abts {
+		if bbts[i] != v {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (o *Object) path() string {
 	return "/riak/" + o.Bucket + "/" + o.Key
 }
@@ -56,7 +214,10 @@ func (o *Object) hardReset() {
 			delete(o.Index, key)
 		}
 	}
-	o.Body.Reset()
+	if o.Body != nil {
+		o.Body.Reset()
+	}
+	o.lastModified = time.Time{}
 	o.Bucket, o.Key, o.Ctype, o.Vclock, o.eTag = "", "", "", "", ""
 }
 
