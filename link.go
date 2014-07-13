@@ -10,8 +10,9 @@ import (
 	"strings"
 )
 
-// FollowLink follows one of the object's named links
-func (c *Client) FollowLink(o *Object, name string) ([]*Object, error) {
+// FollowMultiLink follows one of the object's named links, returning
+// one or many Objects.
+func (c *Client) FollowMultiLink(o *Object, name string) ([]*Object, error) {
 	link, ok := o.Links[name]
 	if !ok {
 		return nil, errors.New("Link name doesn't exist for this object.")
@@ -94,5 +95,33 @@ func linkpath(o *Object, name string, link Link) string {
 	} else {
 		buf.WriteByte('_')
 	}
+	return buf.String()
+}
+
+// FetchLink follows an object link that links to one object.
+// This works analagously to Fetch()ing the object at the named link. 'opts'
+// are passed directly to Fetch. The link must have both the bucket and key fields defined.
+func (c *Client) FetchLink(o *Object, name string, opts map[string]string) (*Object, error) {
+	link, ok := o.Links["name"]
+	if !ok {
+		return nil, errors.New("Link name doesn't exist for this object.")
+	}
+
+	if link.Bucket == "" || link.Key == "" {
+		return nil, errors.New("Link doesn't link to one object.")
+	}
+
+	return c.Fetch(lpath(link), opts)
+}
+
+// format a link as an ordinary riak object key-bucket path
+// CHECK FOR EMPTY STRINGS FIRST
+func lpath(l Link) string {
+	var stack [64]byte
+	buf := bytes.NewBuffer(stack[0:0])
+	buf.WriteString("/riak/")
+	buf.WriteString(l.Bucket)
+	buf.WriteByte('/')
+	buf.WriteString(l.Key)
 	return buf.String()
 }
