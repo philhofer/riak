@@ -1,0 +1,6 @@
+package riak
+
+import (
+	"testing"
+)
+
