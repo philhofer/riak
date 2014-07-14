@@ -21,28 +21,32 @@ type doer interface {
 // FOR TESTING
 type testDo struct {
 	client  *http.Client
-	lastReq *http.Request
+	lastReq *http.Request  // last request sent
+	lastRes *http.Response // last response received
 }
 
-// FOR TESTING
+// FOR TESTING - NOT THREADSAFE
 func (t *testDo) Do(req *http.Request) (*http.Response, error) {
 	t.lastReq = req
-	return t.client.Do(req)
+	res, err := t.client.Do(req)
+	t.lastRes = res
+	return res, err
 }
 
-// FOR TESTING
+// FOR TESTING - NOT THREADSAFE
 func newtestclient(host string) *Client {
 	return &Client{
 		cl: &testDo{
 			client:  &http.Client{},
 			lastReq: nil,
+			lastRes: nil,
 		},
 		host: host,
 		id:   "testClient",
 	}
 }
 
-// FOR TESTING
+// FOR TESTING - get last request
 func (c *Client) lastreq() *http.Request {
 	return c.cl.(*testDo).lastReq
 }
