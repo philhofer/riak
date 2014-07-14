@@ -43,7 +43,7 @@ type Object struct {
 // Link creates a named link between one object
 // and another. The linked object's bucket & key
 // should not be nil.
-func (o *Object) Link(name string, ol *Object) {
+func (o *Object) AddLink(name string, ol *Object) {
 	if o.Links == nil {
 		o.Links = make(map[string]Link)
 	}

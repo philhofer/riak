@@ -63,7 +63,7 @@ func (c *Client) CreateObject(o *Object, opts map[string]string) error {
 // Merge is successful ONLY if the object in question has not been changed
 // since the last read. ErrModified is returned if there has been a change
 // since 'o' has been retrieved. You can call c.GetUpdate and then re-try
-// the store.
+// the store. Merge will update the object's Vlock and Etag fields.
 func (c *Client) Merge(o *Object, opts map[string]string) error {
 	//TODO
 	req, err := http.NewRequest("PUT", c.host+o.path(), o.Body)
@@ -108,7 +108,8 @@ func (c *Client) Merge(o *Object, opts map[string]string) error {
 }
 
 // Store stores an object at the object's canonical path (/riak/bucket/key).
-// Doesn't do if-not-modified checks.
+// Doesn't do if-not-modified checks. The object's Vclock and Etag fields
+// are modified to reflect the server's response.
 func (c *Client) Store(o *Object, opts map[string]string) error {
 	req, err := http.NewRequest("PUT", c.host+o.path(), o.Body)
 	if err != nil {

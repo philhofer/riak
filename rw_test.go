@@ -21,7 +21,6 @@ func TestMerge(t *testing.T) {
 		- Write one object
 		- Write a second object at the same key
 		- Try to merge changes from the first object (should fail ErrModified)
-		- Call GetUpdate on second update
 		- Try to merge changes from the second object (should succeed.)
 	*/
 
