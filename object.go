@@ -274,11 +274,10 @@ func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error
 				for key := range o.Meta {
 					delete(o.Meta, key)
 				}
-			}
-			metakey := strings.SplitAfter(key, "X-Riak-Meta-")[1]
-			if o.Meta == nil {
+			} else {
 				o.Meta = make(map[string]string)
 			}
+			metakey := strings.SplitAfter(key, "X-Riak-Meta-")[1]
 			o.Meta[metakey] = vals[0]
 			continue
 
@@ -287,11 +286,10 @@ func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error
 				for key := range o.Index {
 					delete(o.Index, key)
 				}
-			}
-			indexkey := strings.SplitAfter(key, "X-Riak-Index-")[1]
-			if o.Index == nil {
+			} else {
 				o.Index = make(map[string]string)
 			}
+			indexkey := strings.SplitAfter(key, "X-Riak-Index-")[1]
 			o.Index[indexkey] = vals[0]
 			continue
 
@@ -355,6 +353,8 @@ func (o *Object) writeheader(hd http.Header) {
 
 	if o.Ctype != "" {
 		hd.Set("Content-Type", o.Ctype)
+	} else {
+		hd.Set("Content-Type", "text/plain")
 	}
 
 	if o.Vclock != "" {

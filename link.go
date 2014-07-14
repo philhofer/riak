@@ -111,17 +111,5 @@ func (c *Client) FetchLink(o *Object, name string, opts map[string]string) (*Obj
 		return nil, errors.New("Link doesn't link to one object.")
 	}
 
-	return c.Fetch(lpath(link), opts)
-}
-
-// format a link as an ordinary riak object key-bucket path
-// CHECK FOR EMPTY STRINGS FIRST
-func lpath(l Link) string {
-	var stack [64]byte
-	buf := bytes.NewBuffer(stack[0:0])
-	buf.WriteString("/riak/")
-	buf.WriteString(l.Bucket)
-	buf.WriteByte('/')
-	buf.WriteString(l.Key)
-	return buf.String()
+	return c.Fetch(link.Bucket, link.Key, opts)
 }

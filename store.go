@@ -13,18 +13,17 @@ import (
 // - 'dw' - durable write quorum (number, 'quorum', or 'all')
 // - 'pw' - primary replicas (number, 'quorum', or 'all')
 func (c *Client) CreateObject(o *Object, opts map[string]string) error {
+	if o.Body == nil || len(o.Body.Bytes()) == 0 {
+		return ErrInvalidBody{}
+	}
+
 	path := "/riak/" + o.Bucket
 	req, err := http.NewRequest("POST", c.host+path, o.Body)
 	if err != nil {
 		return err
 	}
 
-	if o.Ctype == "" {
-		req.Header.Set("Content-Type", "text/plain")
-	} else {
-		req.Header.Set("Content-Type", o.Ctype)
-	}
-	// write links, meta, index stuff
+	// write content type, links, meta, index stuff
 	o.writeheader(req.Header)
 	// return info so that we can get vclock, etc.
 	query := make(url.Values)
