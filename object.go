@@ -26,10 +26,10 @@ type Object struct {
 	Bucket       string            // Object bucket
 	Key          string            // Object key
 	Ctype        string            // Content-Type
-	Vclock       string            // Vclock
+	Vclock       string            // Last seen vector clock
 	eTag         string            // Etag
 	lastModified time.Time         // Last-Modified
-	Links        map[string]Link   // Link: <>
+	Links        map[string]Link   // Link: </riak/bucket/key>
 	Meta         map[string]string // X-Riak-Meta-*
 	Index        map[string]string // X-Riak-Index-*
 	Body         *bytes.Buffer     // Body
@@ -194,7 +194,13 @@ body:
 }
 
 func (o *Object) path() string {
-	return "/riak/" + o.Bucket + "/" + o.Key
+	var stack [64]byte
+	buf := bytes.NewBuffer(stack[0:0])
+	buf.WriteString("/riak/")
+	buf.WriteString(o.Bucket)
+	buf.WriteByte('/')
+	buf.WriteString(o.Key)
+	return buf.String()
 }
 
 func (o *Object) hardReset() {
