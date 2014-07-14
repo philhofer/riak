@@ -8,27 +8,40 @@ import (
 
 // CreateObject creates a new object in 'bucket' and modifies the object
 // key to be the key that riak assigned it. Only the 'body' and 'bucket'
-// fields of the object need to be defined.
-func (c *Client) CreateObject(o *Object) error {
+// fields of the object need to be defined. Valid options are:
+// - 'w' - write quorum (number, 'quorum', or 'all')
+// - 'dw' - durable write quorum (number, 'quorum', or 'all')
+// - 'pw' - primary replicas (number, 'quorum', or 'all')
+func (c *Client) CreateObject(o *Object, opts map[string]string) error {
 	path := "/riak/" + o.Bucket
 	req, err := http.NewRequest("POST", c.host+path, o.Body)
 	if err != nil {
 		return err
 	}
+	// write links, meta, index stuff
 	o.writeheader(req.Header)
+	// return info so that we can get vclock, etc.
+	query := make(url.Values)
+	if opts != nil {
+		for key, val := range opts {
+			query.Set(key, val)
+		}
+	}
+	query.Set("returnbody", "true")
+	req.URL.RawQuery = query.Encode()
 
 	res, err := c.cl.Do(req)
 	if err != nil {
 		return err
 	}
-	// we never use the body
-	res.Body.Close()
+	defer res.Body.Close()
 	switch res.StatusCode {
 	case 201:
 		// this is what we wanted
 		loc := res.Header.Get("Location")
 		o.Key = strings.TrimPrefix(path+"/", loc)
-		return nil
+		err = o.fromResponse(res.Header, nil)
+		return err
 	case 400:
 		return ErrBadRequest
 	default:
@@ -37,7 +50,7 @@ func (c *Client) CreateObject(o *Object) error {
 
 }
 
-// Merge puts an object into the database at /buckets/bucket/keys/key
+// Merge puts an object into the database at /riak/[bucket]/[key]
 // Valid opts are:
 // - 'w':(number) write quorum
 // - 'dw':(number) durable write quorum
@@ -58,7 +71,7 @@ func (c *Client) Merge(o *Object, opts map[string]string) error {
 			query.Set(key, val)
 		}
 	}
-	query.Set("returnbody", "false")
+	query.Set("returnbody", "true")
 	req.URL.RawQuery = query.Encode()
 
 	o.writeheader(req.Header)
@@ -71,14 +84,11 @@ func (c *Client) Merge(o *Object, opts map[string]string) error {
 	}
 
 	switch res.StatusCode {
-	case 201, 200, 204:
+	case 200, 201, 204:
 		// read new vclock
-		vclk := res.Header.Get("X-Riak-Vclock")
-		if vclk != "" {
-			o.Vclock = vclk
-		}
+		err = o.fromResponse(res.Header, res.Body)
 		res.Body.Close()
-		return nil
+		return err
 	case 400:
 		res.Body.Close()
 		return ErrBadRequest

@@ -233,32 +233,16 @@ func (o *Object) hardReset() {
 }
 
 // read response headers and body
+// only deletes old values if it finds new ones
 func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error {
-	// clear existing values
-	if o.Links != nil {
-		for key := range o.Links {
-			delete(o.Links, key)
-		}
-	}
-	if o.Meta != nil {
-		for key := range o.Meta {
-			delete(o.Meta, key)
-		}
-	}
-	if o.Index != nil {
-		for key := range o.Index {
-			delete(o.Index, key)
-		}
-	}
-	if o.Body != nil {
-		o.Body.Reset()
-	}
-
 	// parse header
 	for key, vals := range hdr {
+		// handle empty header field...
 		if len(vals) < 1 {
 			continue
 		}
+
+		// regular headers
 		switch key {
 		case "Content-Type":
 			o.Ctype = vals[0]
@@ -272,12 +256,25 @@ func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error
 			o.eTag = vals[0]
 			continue
 		case "Link":
+			if o.Links != nil {
+				for key := range o.Links {
+					delete(o.Links, key)
+				}
+			}
 			for _, val := range vals {
 				parseLinks(val, &o.Links)
 			}
 		}
+
+		// meta and index maps
+		// remove old map if we find the header
 		switch {
 		case strings.HasPrefix(key, "X-Riak-Meta-"):
+			if o.Meta != nil {
+				for key := range o.Meta {
+					delete(o.Meta, key)
+				}
+			}
 			metakey := strings.SplitAfter(key, "X-Riak-Meta-")[1]
 			if o.Meta == nil {
 				o.Meta = make(map[string]string)
@@ -286,6 +283,11 @@ func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error
 			continue
 
 		case strings.HasPrefix(key, "X-Riak-Index-"):
+			if o.Index != nil {
+				for key := range o.Index {
+					delete(o.Index, key)
+				}
+			}
 			indexkey := strings.SplitAfter(key, "X-Riak-Index-")[1]
 			if o.Index == nil {
 				o.Index = make(map[string]string)
@@ -297,6 +299,11 @@ func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error
 	}
 	if body == nil {
 		return nil
+	}
+	if o.Body != nil {
+		o.Body.Reset()
+	} else {
+		o.Body = bytes.NewBuffer(nil)
 	}
 	_, err := io.Copy(o.Body, body)
 	body.Close()
