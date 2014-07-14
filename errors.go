@@ -14,6 +14,10 @@ type ErrMultipleVclocks struct {
 	Vclocks []string
 }
 
+type ErrInvalidBody struct {
+
+}
+
 func (e *ErrMultipleVclocks) Error() string {
 	return "Error: Multiple Choices"
 }
