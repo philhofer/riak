@@ -40,6 +40,17 @@ type Object struct {
 	Body         *bytes.Buffer     // Body
 }
 
+// Link creates a named link between one object
+// and another. The linked object's bucket & key
+// should not be nil.
+func (o *Object) Link(name string, ol *Object) {
+	if o.Links == nil {
+		o.Links = make(map[string]Link)
+	}
+	o.Links[name] = Link{Bucket: ol.Bucket, Key: ol.Key}
+}
+
+// test if two objects are equal
 func objectEqual(on *Object, of *Object) bool {
 	if on == of {
 		return true
@@ -60,9 +71,8 @@ func objectEqual(on *Object, of *Object) bool {
 				goto meta
 			}
 			return false
-		} else {
-			goto meta
 		}
+		goto meta
 	} else if of.Links == nil {
 		if len(on.Links) == 0 {
 			goto meta
@@ -102,9 +112,8 @@ meta:
 				goto index
 			}
 			return false
-		} else {
-			goto index
 		}
+		goto index
 	} else if of.Meta == nil {
 		if len(on.Meta) == 0 {
 			goto index
@@ -198,6 +207,7 @@ body:
 	return true
 }
 
+// /riak/bucket/key
 func (o *Object) path() string {
 	var stack [64]byte
 	buf := bytes.NewBuffer(stack[0:0])
@@ -308,11 +318,13 @@ func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error
 	return err
 }
 
+// Link represents the unique key+bucket tuple of an object.
 type Link struct {
 	Bucket string
 	Key    string
 }
 
+// parse header field to proper link using gross regex stuff
 func parseLinks(str string, links *map[string]Link) {
 	matches := linkrgx.FindAllStringSubmatch(str, -1)
 	if len(matches) == 0 {
@@ -323,13 +335,15 @@ func parseLinks(str string, links *map[string]Link) {
 	}
 	for _, match := range matches {
 		if len(match) < 5 {
-			panic("match length < 5")
+			// weird
+			continue
 		}
 		(*links)[match[4]] = Link{Bucket: match[2], Key: match[3]}
 	}
 	return
 }
 
+// the opposite direction from parse header
 func formatLinks(links map[string]Link) string {
 	i := 0
 	buf := bytes.NewBuffer(make([]byte, 64)[0:0])
@@ -349,6 +363,7 @@ func formatLinks(links map[string]Link) string {
 	return buf.String()
 }
 
+// write header fields from an object
 func (o *Object) writeheader(hd http.Header) {
 
 	if o.Ctype != "" {

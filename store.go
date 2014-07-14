@@ -120,7 +120,7 @@ func (c *Client) Store(o *Object, opts map[string]string) error {
 			query.Set(key, val)
 		}
 	}
-	query.Set("returnbody", "false")
+	query.Set("returnbody", "true")
 	req.URL.RawQuery = query.Encode()
 
 	o.writeheader(req.Header)

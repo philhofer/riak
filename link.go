@@ -102,7 +102,7 @@ func linkpath(o *Object, name string, link Link) string {
 // This works analagously to Fetch()ing the object at the named link. 'opts'
 // are passed directly to Fetch. The link must have both the bucket and key fields defined.
 func (c *Client) FetchLink(o *Object, name string, opts map[string]string) (*Object, error) {
-	link, ok := o.Links["name"]
+	link, ok := o.Links[name]
 	if !ok {
 		return nil, errors.New("Link name doesn't exist for this object.")
 	}
