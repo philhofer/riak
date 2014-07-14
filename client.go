@@ -51,6 +51,10 @@ func (c *Client) lastreq() *http.Request {
 	return c.cl.(*testDo).lastReq
 }
 
+func (c *Client) lastres() *http.Response {
+	return c.cl.(*testDo).lastRes
+}
+
 type Client struct {
 	cl   doer
 	host string
