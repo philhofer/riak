@@ -52,7 +52,7 @@ func (c *Client) Merge(o *Object, opts map[string]string) error {
 	if err != nil {
 		return err
 	}
-	var query url.Values
+	query := make(url.Values)
 	if opts != nil {
 		for key, val := range opts {
 			query.Set(key, val)
@@ -99,7 +99,7 @@ func (c *Client) Store(o *Object, opts map[string]string) error {
 	if err != nil {
 		return err
 	}
-	var query url.Values
+	query := make(url.Values)
 	if opts != nil {
 		for key, val := range opts {
 			query.Set(key, val)

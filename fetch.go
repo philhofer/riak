@@ -21,7 +21,7 @@ func (c *Client) Fetch(path string, opts map[string]string) (*Object, error) {
 
 	// url-encode opts
 	if opts != nil {
-		var query url.Values
+		query := make(url.Values)
 		for key, val := range opts {
 			query.Set(key, val)
 		}
@@ -50,7 +50,7 @@ func (c *Client) GetUpdate(o *Object, opts map[string]string) (bool, error) {
 	}
 
 	if opts != nil {
-		var query url.Values
+		query := make(url.Values)
 		for key, val := range opts {
 			query.Set(key, val)
 		}

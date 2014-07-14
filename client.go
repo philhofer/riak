@@ -19,6 +19,7 @@ type Client struct {
 	id   string
 }
 
+// only for bucket props, etc.
 func (c *Client) do(method string, path string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, c.host+path, body)
 	if err != nil {
