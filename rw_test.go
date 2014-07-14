@@ -16,7 +16,7 @@ func TestUpdate(t *testing.T) {
 	objA := &Object {
 		Key: "testKey",
 		Bucket: "testing",
-		Body: &bodyA,
+		Body: bodyA,
 	}
 
 	bodyB := bytes.NewBuffer(nil)
@@ -24,7 +24,7 @@ func TestUpdate(t *testing.T) {
 	objB := &Object {
 		Key: "testKey",
 		Bucket: "testing",
-		Body: &bodyB,
+		Body: bodyB,
 	}
 
 	// write first body
