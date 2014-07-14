@@ -21,7 +21,12 @@ func init() {
 	linkrgx = rgx
 }
 
-// Object is a Riak object
+// Object is a Riak object. Its fields
+// represent the data associated with a riak object, as well
+// as the acutal body of the object. Please note that this
+// package does not escape strings before forming url paths,
+// so you must properly url-escape your strings if you are
+// using unsupported characters.
 type Object struct {
 	Bucket       string            // Object bucket
 	Key          string            // Object key
