@@ -50,6 +50,15 @@ func (o *Object) Link(name string, ol *Object) {
 	o.Links[name] = Link{Bucket: ol.Bucket, Key: ol.Key}
 }
 
+// Index registers 'value' as a tag under the secondary index 'index',
+// overwriting the previous value if it existed.
+func (o *Object) AddIndex(index string, value string) {
+	if o.Index == nil {
+		o.Index = make(map[string]string)
+	}
+	o.Index[index] = value
+}
+
 // test if two objects are equal
 func objectEqual(on *Object, of *Object) bool {
 	if on == of {

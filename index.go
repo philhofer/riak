@@ -6,9 +6,8 @@ import (
 	"errors"
 )
 
-// SearchIndex returns a list of keys in the bucket 'bucket' with the 'index'
-// secondary index field.
-func (c *Client) IndexKeys(bucket string, index string, value string) ([]string, error) {
+// IndexLookup returns a list of keys in 'bucket' with 'value' for the tag 'index'
+func (c *Client) IndexLookup(bucket string, index string, value string) ([]string, error) {
 	if bucket == "" || index == "" || value == "" {
 		return nil, errors.New("Cannot have empty string argument.")
 	}
@@ -28,6 +27,7 @@ func (c *Client) IndexKeys(bucket string, index string, value string) ([]string,
 	return kr.keys, err
 }
 
+// /buckets/[bucket]/index/[index]/?...
 func ipath(bucket string, index string, value string) string {
 	var stack [80]byte
 	buf := bytes.NewBuffer(stack[0:0])
