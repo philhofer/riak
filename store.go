@@ -18,6 +18,12 @@ func (c *Client) CreateObject(o *Object, opts map[string]string) error {
 	if err != nil {
 		return err
 	}
+
+	if o.Ctype == "" {
+		req.Header.Set("Content-Type", "text/plain")
+	} else {
+		req.Header.Set("Content-Type", o.Ctype)
+	}
 	// write links, meta, index stuff
 	o.writeheader(req.Header)
 	// return info so that we can get vclock, etc.
@@ -39,7 +45,7 @@ func (c *Client) CreateObject(o *Object, opts map[string]string) error {
 	case 201:
 		// this is what we wanted
 		loc := res.Header.Get("Location")
-		o.Key = strings.TrimPrefix(path+"/", loc)
+		o.Key = strings.TrimPrefix(loc, path+"/")
 		err = o.fromResponse(res.Header, nil)
 		return err
 	case 400:

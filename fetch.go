@@ -13,9 +13,13 @@ import (
 // - 'notfound_ok':(true/false)
 // - 'vtag':(vtag) - which sibling to retrieve, if multiple siblings
 // Fetch returns ErrMultipleVclocks if multiple options are available.
-func (c *Client) Fetch(path string, opts map[string]string) (*Object, error) {
-	req, err := http.NewRequest("GET", c.host+path, nil)
+func (c *Client) Fetch(bucket string, key string, opts map[string]string) (*Object, error) {
+	o := newObj()
+	o.Bucket = bucket
+	o.Key = key
+	req, err := http.NewRequest("GET", c.host+o.path(), nil)
 	if err != nil {
+		Release(o)
 		return nil, err
 	}
 
@@ -31,12 +35,13 @@ func (c *Client) Fetch(path string, opts map[string]string) (*Object, error) {
 
 	res, err := c.cl.Do(req)
 	if err != nil {
+		Release(o)
 		return nil, err
 	}
 	if res.StatusCode == 300 {
+		Release(o)
 		return nil, multiple(res)
 	}
-	o := newObj()
 	err = o.fromResponse(res.Header, res.Body)
 	return o, err
 }
