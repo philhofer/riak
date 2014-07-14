@@ -13,8 +13,42 @@ func NewClient(host string, clientID string) *Client {
 	}
 }
 
+// FOR TESTING
+type doer interface {
+	Do(*http.Request) (*http.Response, error)
+}
+
+// FOR TESTING
+type testDo struct {
+	client  *http.Client
+	lastReq *http.Request
+}
+
+// FOR TESTING
+func (t *testDo) Do(req *http.Request) (*http.Response, error) {
+	t.lastReq = req
+	return t.client.Do(req)
+}
+
+// FOR TESTING
+func newtestclient(host string) *Client {
+	return &Client{
+		cl: &testDo{
+			client:  &http.Client{},
+			lastReq: nil,
+		},
+		host: host,
+		id:   "testClient",
+	}
+}
+
+// FOR TESTING
+func (c *Client) lastreq() *http.Request {
+	return c.cl.(*testDo).lastReq
+}
+
 type Client struct {
-	cl   *http.Client
+	cl   doer
 	host string
 	id   string
 }
