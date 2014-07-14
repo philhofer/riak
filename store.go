@@ -3,7 +3,39 @@ package riak
 import (
 	"net/http"
 	"net/url"
+	"strings"
 )
+
+// CreateObject creates a new object in 'bucket' and modifies the object
+// key to be the key that riak assigned it. Only the 'body' and 'bucket'
+// fields of the object need to be defined.
+func (c *Client) CreateObject(o *Object) error {
+	path := "/riak/" + o.Bucket
+	req, err := http.NewRequest("POST", c.host+path, o.Body)
+	if err != nil {
+		return err
+	}
+	o.writeheader(req.Header)
+
+	res, err := c.cl.Do(req)
+	if err != nil {
+		return err
+	}
+	// we never use the body
+	res.Body.Close()
+	switch res.StatusCode {
+	case 201:
+		// this is what we wanted
+		loc := res.Header.Get("Location")
+		o.Key = strings.TrimPrefix(path+"/", loc)
+		return nil
+	case 400:
+		return ErrBadRequest
+	default:
+		return statusCode(res.StatusCode)
+	}
+
+}
 
 // Merge puts an object into the database at /buckets/bucket/keys/key
 // Valid opts are:
@@ -16,7 +48,7 @@ import (
 // the store.
 func (c *Client) Merge(o *Object, opts map[string]string) error {
 	//TODO
-	req, err := http.NewRequest("PUT", o.path(), o.Body)
+	req, err := http.NewRequest("PUT", c.host+o.path(), o.Body)
 	if err != nil {
 		return err
 	}
@@ -60,9 +92,10 @@ func (c *Client) Merge(o *Object, opts map[string]string) error {
 	}
 }
 
-// Store stores a new object at 'path'.
+// Store stores an object at the object's canonical path (/riak/bucket/key).
+// Doesn't do if-not-modified checks.
 func (c *Client) Store(o *Object, opts map[string]string) error {
-	req, err := http.NewRequest("PUT", o.path(), o.Body)
+	req, err := http.NewRequest("PUT", c.host+o.path(), o.Body)
 	if err != nil {
 		return err
 	}
@@ -72,7 +105,7 @@ func (c *Client) Store(o *Object, opts map[string]string) error {
 			query.Set(key, val)
 		}
 	}
-	query.Set("returnbody", "true")
+	query.Set("returnbody", "false")
 	req.URL.RawQuery = query.Encode()
 
 	o.writeheader(req.Header)

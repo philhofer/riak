@@ -44,7 +44,7 @@ func (c *Client) Fetch(path string, opts map[string]string) (*Object, error) {
 // Update checks if the object has been changed, and if it has,
 // it overwrites the object and returns 'true'.
 func (c *Client) GetUpdate(o *Object, opts map[string]string) (bool, error) {
-	req, err := http.NewRequest("GET", o.path(), nil)
+	req, err := http.NewRequest("GET", c.host+o.path(), nil)
 	if err != nil {
 		return false, err
 	}
