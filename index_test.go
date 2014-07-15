@@ -16,7 +16,7 @@ func TestIndexLookup(t *testing.T) {
 		Body:   bodyA,
 	}
 
-	objA.AddIndex("username_bin", "bob123")
+	objA.AddIndex("USERNAME_bin", "bob123")
 
 	c := newtestclient("http://localhost:8098")
 	err := c.Store(objA, nil)
@@ -41,7 +41,7 @@ func TestIndexLookup(t *testing.T) {
 	}
 
 	// now lets look up username = bob
-	keys, err := c.IndexLookup("testing", "username_bin", "bob123")
+	keys, err := c.IndexLookup("testing", "USERNAME_bin", "bob123")
 	if err != nil {
 		dump(t, c, err)
 	}
