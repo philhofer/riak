@@ -14,12 +14,14 @@ func TestVclockCollision(t *testing.T) {
 	go makeObj("bucket", "key", "123", errChan)
 	errA := <- errChan
 	errB := <- errChan
-	
-	_, okA := errA.(*ErrMultipleVclocks)
-	_, okB := errB.(*ErrMultipleVclocks)
-	
-	if (!okA && !okB) { 
-		t.Errorf("Expected ErrInvalidBody, instead receieved errors:\n%s\n%s\n", errA, errB)
+
+	if (errA == nil) && (errB == nil) {
+		c := newtestclient("http://localhost:8098")
+		_, err := c.Fetch("bucket", "key", nil)
+		_, ok := err.(*ErrMultipleVclocks)
+		if !ok {
+			t.Errorf("Expected ErrMultipleVclocks, recieved error: %s\n", err) 
+		}
 	}
 }
 
