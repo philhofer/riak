@@ -11,7 +11,7 @@ func TestIndexLookup(t *testing.T) {
 	bodyA := bytes.NewBuffer(nil)
 	bodyA.WriteString("Testing, 1, 2, 3")
 	objA := &Object{
-		Key:    "testKey",
+		Key:    "indexer",
 		Bucket: "testing",
 		Body:   bodyA,
 	}
@@ -26,7 +26,7 @@ func TestIndexLookup(t *testing.T) {
 	Release(objA)
 	objA = nil
 
-	new, err := c.Fetch("testing", "testKey", nil)
+	new, err := c.Fetch("testing", "indexer", nil)
 	if err != nil {
 		dump(t, c, err)
 	}
@@ -53,7 +53,7 @@ func TestIndexLookup(t *testing.T) {
 		dump(t, c, err)
 	}
 
-	if keys.Keys[0] != "testKey" {
+	if keys.Keys[0] != "indexer" {
 		t.Errorf("Got key %q; expected %q", keys.Keys[0], "bob123")
 	}
 }
