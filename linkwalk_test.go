@@ -41,7 +41,7 @@ func TestLinkWalk(t *testing.T) {
 		dump(t, c, err)
 	}
 
-	objA.Link("child", objB)
+	objA.AddLink("child", objB)
 
 	err = c.Merge(objA, nil)
 	if err != nil {
@@ -60,4 +60,5 @@ func TestLinkWalk(t *testing.T) {
 
 	Release(objA)
 	Release(objB)
+	Release(child)
 }

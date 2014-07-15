@@ -7,7 +7,7 @@ import (
 )
 
 // IndexLookup returns a list of keys in 'bucket' with 'value' for the tag 'index'
-func (c *Client) IndexLookup(bucket string, index string, value string) ([]string, error) {
+func (c *Client) IndexLookup(bucket string, index string, value string) (*Keyres, error) {
 	if bucket == "" || index == "" || value == "" {
 		return nil, errors.New("Cannot have empty string argument.")
 	}
@@ -20,11 +20,12 @@ func (c *Client) IndexLookup(bucket string, index string, value string) ([]strin
 		res.Body.Close()
 		return nil, statusCode(res.StatusCode)
 	}
-	var kr keyres
+	kr := new(Keyres)
+	kr.Keys = make([]string, 0, 1)
 	dec := json.NewDecoder(res.Body)
 	err = dec.Decode(&kr)
 	res.Body.Close()
-	return kr.keys, err
+	return kr, err
 }
 
 // /buckets/[bucket]/index/[index]/?...
@@ -40,6 +41,6 @@ func ipath(bucket string, index string, value string) string {
 	return buf.String()
 }
 
-type keyres struct {
-	keys []string `json:"keys"`
+type Keyres struct {
+	Keys []string `json:"keys"`
 }

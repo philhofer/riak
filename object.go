@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"net/textproto"
 	"regexp"
 	"strings"
 	"time"
@@ -56,7 +57,12 @@ func (o *Object) AddIndex(index string, value string) {
 	if o.Index == nil {
 		o.Index = make(map[string]string)
 	}
-	o.Index[index] = value
+	o.Index[textproto.CanonicalMIMEHeaderKey(index)] = value
+}
+
+func (o *Object) GetIndex(index string) string {
+	s, _ := o.Index[textproto.CanonicalMIMEHeaderKey(index)]
+	return s
 }
 
 // test if two objects are equal
@@ -253,6 +259,7 @@ func (o *Object) hardReset() {
 
 // read response headers and body
 // only deletes old values if it finds new ones
+// body can be nil
 func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error {
 	// parse header
 	for key, vals := range hdr {
