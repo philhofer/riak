@@ -17,7 +17,7 @@ func TestLinkWalk(t *testing.T) {
 	bodyA := bytes.NewBuffer(nil)
 	bodyA.WriteString("Testing, 1, 2, 3")
 	objA := &Object{
-		Key:    "testKey",
+		Key:    "link",
 		Bucket: "testing",
 		Body:   bodyA,
 	}
@@ -31,7 +31,7 @@ func TestLinkWalk(t *testing.T) {
 	bodyB := bytes.NewBuffer(nil)
 	bodyB.WriteString("A second body.")
 	objB := &Object{
-		Key:    "anotherKey",
+		Key:    "linkchild",
 		Bucket: "testing",
 		Body:   bodyB,
 	}
