@@ -9,14 +9,15 @@ import (
 
 var ErrModified = errors.New("Modified since last read.")
 var ErrBadRequest = errors.New("Bad Request")
+var ErrNotFound = errors.New("Not found.")
 
 type ErrMultipleVclocks struct {
 	Vclocks []string
 }
 
-type ErrInvalidBody struct {}
+type ErrInvalidBody struct{}
 
-func (e ErrInvalidBody) Error() string { return "Error: empty body."}
+func (e ErrInvalidBody) Error() string { return "Error: empty body." }
 
 func (e *ErrMultipleVclocks) Error() string {
 	return "Error: Multiple Choices"
