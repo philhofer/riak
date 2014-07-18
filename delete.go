@@ -1,13 +1,21 @@
 package riak
 
-import ()
+import (
+	"net/http"
+)
 
+// Delete removes an object from the database
 func (c *Client) Delete(o *Object, opts map[string]string) error {
 	if o.Key == "" || o.Bucket == "" {
 		return ErrNotFound
 	}
-
-	res, err := c.do("DELETE", o.path(), nil)
+	req, err := http.NewRequest("DELETE", c.host+o.path(), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("X-Riak-ClientId", c.id)
+	req.Header.Set("X-Riak-Vclock", o.Vclock)
+	res, err := c.cl.Do(req)
 	if err != nil {
 		return err
 	}
@@ -17,7 +25,10 @@ func (c *Client) Delete(o *Object, opts map[string]string) error {
 		return nil
 	case 404:
 		return ErrNotFound
+	case 400:
+		return ErrBadRequest
 	default:
 		return statusCode(res.StatusCode)
 	}
+
 }
