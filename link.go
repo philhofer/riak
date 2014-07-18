@@ -32,6 +32,8 @@ func (c *Client) FollowMultiLink(o *Object, name string) ([]*Object, error) {
 		switch res.StatusCode {
 		case 400:
 			return nil, ErrBadRequest
+		case 404:
+			return nil, ErrNotFound
 		default:
 			return nil, statusCode(res.StatusCode)
 		}

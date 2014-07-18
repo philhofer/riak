@@ -38,12 +38,32 @@ func (c *Client) Fetch(bucket string, key string, opts map[string]string) (*Obje
 		Release(o)
 		return nil, err
 	}
-	if res.StatusCode == 300 {
-		Release(o)
-		return nil, multiple(res)
+	if res.StatusCode == 200 {
+		err = o.fromResponse(res.Header, res.Body)
+		return o, err
 	}
-	err = o.fromResponse(res.Header, res.Body)
-	return o, err
+	Release(o)
+	switch res.StatusCode {
+	case 300:
+		// multiple closes the body
+		return nil, multiple(res)
+
+	case 400:
+		res.Body.Close()
+		return nil, ErrBadRequest
+
+	case 404:
+		res.Body.Close()
+		return nil, ErrNotFound
+
+	case 503:
+		res.Body.Close()
+		return nil, ErrTimeout
+
+	default:
+		res.Body.Close()
+		return nil, statusCode(res.StatusCode)
+	}
 }
 
 // Update checks if the object has been changed, and if it has,

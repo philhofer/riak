@@ -7,20 +7,28 @@ import (
 	"net/http"
 )
 
-var ErrModified = errors.New("Modified since last read.")
-var ErrBadRequest = errors.New("Bad Request")
-var ErrNotFound = errors.New("Not found.")
+// ErrModified is returned when an if-not-modified precondition fails
+var ErrModified = errors.New("modified since last read (412)")
 
+// ErrBadRequest is returned when a request is poorly formed
+var ErrBadRequest = errors.New("bad request (400)")
+
+// ErrNotFound is returns when the object could not be located
+var ErrNotFound = errors.New("not found (404)")
+
+// ErrTimeout is returned when a query or fetch
+// request times out server-side
+var ErrTimeout = errors.New("riak request timeout (503)")
+
+// ErrMultipleVclocks is an object returned when
+// multiple objects reside at the same bucket/key tuple.
+// It contains the vector clocks of each object.
 type ErrMultipleVclocks struct {
 	Vclocks []string
 }
 
-type ErrInvalidBody struct{}
-
-func (e ErrInvalidBody) Error() string { return "Error: empty body." }
-
 func (e *ErrMultipleVclocks) Error() string {
-	return "Error: Multiple Choices"
+	return "multiple choices (300)"
 }
 
 func multiple(res *http.Response) error {
@@ -36,6 +44,8 @@ func multiple(res *http.Response) error {
 	return e
 }
 
+// ErrStatusCode represents a generic
+// HTTP status code
 type ErrStatusCode struct {
 	Code int
 }

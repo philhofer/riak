@@ -164,30 +164,3 @@ func TestCreateFetch(t *testing.T) {
 	Release(obj)
 	Release(newobj)
 }
-
-func TestEmptyBody(t *testing.T) {
-	// Sending an empty body is an error
-
-	var bodyA bytes.Buffer
-	objA := &Object{
-		Key:    "testKey",
-		Bucket: "testing",
-		Body:   &bodyA,
-	}
-
-	objB := &Object{
-		Key:    "testKey",
-		Bucket: "testing",
-		Body:   nil,
-	}
-
-	c := newtestclient("http://localhost:8098")
-	err := c.CreateObject(objA, nil)
-	if _, ok := err.(ErrInvalidBody); !ok {
-		t.Errorf("Expected ErrInvalidBody, instead receieved error: %s", err)
-	}
-	err = c.CreateObject(objB, nil)
-	if _, ok := err.(ErrInvalidBody); !ok {
-		t.Errorf("Expected ErrInvalidBody, instead receieved error: %s", err)
-	}
-}

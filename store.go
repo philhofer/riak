@@ -13,10 +13,6 @@ import (
 // - 'dw' - durable write quorum (number, 'quorum', or 'all')
 // - 'pw' - primary replicas (number, 'quorum', or 'all')
 func (c *Client) CreateObject(o *Object, opts map[string]string) error {
-	if o.Body == nil || len(o.Body.Bytes()) == 0 {
-		return ErrInvalidBody{}
-	}
-
 	path := "/riak/" + o.Bucket
 	req, err := http.NewRequest("POST", c.host+path, o.Body)
 	if err != nil {
@@ -39,17 +35,23 @@ func (c *Client) CreateObject(o *Object, opts map[string]string) error {
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
 	switch res.StatusCode {
 	case 201:
 		// this is what we wanted
 		loc := res.Header.Get("Location")
 		o.Key = strings.TrimPrefix(loc, path+"/")
-		err = o.fromResponse(res.Header, nil)
-		return err
+		return o.fromResponse(res.Header, nil)
 	case 400:
+		res.Body.Close()
 		return ErrBadRequest
+	case 404:
+		res.Body.Close()
+		return ErrNotFound
+	case 503:
+		res.Body.Close()
+		return ErrTimeout
 	default:
+		res.Body.Close()
 		return statusCode(res.StatusCode)
 	}
 
@@ -90,19 +92,22 @@ func (c *Client) Merge(o *Object, opts map[string]string) error {
 
 	switch res.StatusCode {
 	case 200, 201, 204:
-		// read new vclock
-		err = o.fromResponse(res.Header, res.Body)
-		res.Body.Close()
-		return err
+		return o.fromResponse(res.Header, res.Body)
 	case 400:
 		res.Body.Close()
 		return ErrBadRequest
 	case 300:
+		// multiple closes body
 		err = multiple(res)
 		return err
+	case 404:
+		res.Body.Close()
+		return ErrNotFound
 	case 412:
+		res.Body.Close()
 		return ErrModified
 	default:
+		res.Body.Close()
 		return statusCode(res.StatusCode)
 	}
 }
@@ -134,15 +139,14 @@ func (c *Client) Store(o *Object, opts map[string]string) error {
 
 	switch res.StatusCode {
 	case 201, 200, 204:
-		err = o.fromResponse(res.Header, res.Body)
-		return err
+		// fromresponse closes body
+		return o.fromResponse(res.Header, res.Body)
 	case 400:
 		res.Body.Close()
 		return ErrBadRequest
 	case 300:
-		err = multiple(res)
-		res.Body.Close()
-		return err
+		// multiple closes body
+		return multiple(res)
 	case 412:
 		res.Body.Close()
 		return ErrModified
