@@ -41,17 +41,39 @@ type Object struct {
 	Body         *bytes.Buffer     // Body
 }
 
-// Link creates a named link between one object
-// and another. The linked object's bucket & key
-// should not be nil.
-func (o *Object) AddLink(name string, ol *Object) {
+// AddLink adds a named key/bucket link to an object
+func (o *Object) AddLink(name string, bucket string, key string) {
 	if o.Links == nil {
 		o.Links = make(map[string]Link)
 	}
-	o.Links[name] = Link{Bucket: ol.Bucket, Key: ol.Key}
+	o.Links[name] = Link{Bucket: bucket, Key: key}
 }
 
-// Index registers 'value' as a tag under the secondary index 'index',
+// RemoveLink removes a named link from an object
+func (o *Object) RemoveLink(name string) {
+	if o.Links == nil {
+		return
+	}
+	_, ok := o.Links[name]
+	if ok {
+		delete(o.Links, name)
+	}
+}
+
+// GetLink gets a named link from an object
+func (o *Object) GetLink(name string) (key string, bucket string) {
+	if o.Links == nil {
+		return
+	}
+	l, ok := o.Links[name]
+	if ok {
+		key = l.Key
+		bucket = l.Bucket
+	}
+	return
+}
+
+// AddIndex registers 'value' as a tag under the secondary index 'index',
 // overwriting the previous value if it existed.
 func (o *Object) AddIndex(index string, value string) {
 	if o.Index == nil {
@@ -60,9 +82,22 @@ func (o *Object) AddIndex(index string, value string) {
 	o.Index[textproto.CanonicalMIMEHeaderKey(index)] = value
 }
 
+// GetIndex gets a named index for an object. Returns
+// an empty string if it doesn't exist.
 func (o *Object) GetIndex(index string) string {
+	if o.Index == nil {
+		return ""
+	}
 	s, _ := o.Index[textproto.CanonicalMIMEHeaderKey(index)]
 	return s
+}
+
+// RemoveIndex removes a named index from an object
+func (o *Object) RemoveIndex(index string) {
+	_, ok := o.Index[textproto.CanonicalMIMEHeaderKey(index)]
+	if ok {
+		delete(o.Index, textproto.CanonicalMIMEHeaderKey(index))
+	}
 }
 
 // test if two objects are equal
