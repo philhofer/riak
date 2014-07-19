@@ -94,9 +94,13 @@ func (o *Object) GetIndex(index string) string {
 
 // RemoveIndex removes a named index from an object
 func (o *Object) RemoveIndex(index string) {
-	_, ok := o.Index[textproto.CanonicalMIMEHeaderKey(index)]
+	if o.Index == nil {
+		return
+	}
+	tag := textproto.CanonicalMIMEHeaderKey(index)
+	_, ok := o.Index[tag]
 	if ok {
-		delete(o.Index, textproto.CanonicalMIMEHeaderKey(index))
+		delete(o.Index, tag)
 	}
 }
 
@@ -296,12 +300,30 @@ func (o *Object) hardReset() {
 // only deletes old values if it finds new ones
 // body can be nil
 func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error {
+	// reset header fields
+	if o.Links != nil {
+		for key := range o.Links {
+			delete(o.Links, key)
+		}
+	}
+	if o.Meta != nil {
+		for key := range o.Meta {
+			delete(o.Meta, key)
+		}
+	}
+	if o.Index != nil {
+		for key := range o.Index {
+			delete(o.Index, key)
+		}
+	}
+
 	// parse header
-	for key, vals := range hdr {
+	for k, vals := range hdr {
 		// handle empty header field...
 		if len(vals) < 1 {
 			continue
 		}
+		key := textproto.CanonicalMIMEHeaderKey(k)
 
 		// regular headers
 		switch key {
@@ -318,40 +340,31 @@ func (o *Object) fromResponse(hdr map[string][]string, body io.ReadCloser) error
 			continue
 		case "Link":
 			if o.Links != nil {
-				for key := range o.Links {
-					delete(o.Links, key)
+				for y := range o.Links {
+					delete(o.Links, y)
 				}
 			}
 			for _, val := range vals {
 				parseLinks(val, &o.Links)
 			}
+			continue
 		}
 
 		// meta and index maps
 		// remove old map if we find the header
 		switch {
 		case strings.HasPrefix(key, "X-Riak-Meta-"):
-			if o.Meta != nil {
-				for key := range o.Meta {
-					delete(o.Meta, key)
-				}
-			} else {
+			if o.Meta == nil {
 				o.Meta = make(map[string]string)
 			}
+			o.Meta = make(map[string]string)
 			metakey := strings.SplitAfter(key, "X-Riak-Meta-")[1]
 			o.Meta[metakey] = vals[0]
 			continue
 
 		case strings.HasPrefix(key, "X-Riak-Index-"):
-			if o.Index != nil {
-				for key := range o.Index {
-					delete(o.Index, key)
-				}
-			} else {
-				o.Index = make(map[string]string)
-			}
 			indexkey := strings.SplitAfter(key, "X-Riak-Index-")[1]
-			o.Index[indexkey] = vals[0]
+			o.AddIndex(indexkey, vals[0])
 			continue
 
 		}

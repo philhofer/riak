@@ -20,6 +20,28 @@ func TestObjectPath(t *testing.T) {
 	}
 }
 
+func TestObjectIndexAccessors(t *testing.T) {
+	obj := &Object{}
+	pairs := map[string]string{
+		"indexKey":    "value",
+		"CAPSKEY":     "otherval",
+		"lower_snake": "whaarrrgarbbblll",
+	}
+	for key, val := range pairs {
+		obj.AddIndex(key, val)
+	}
+	hdr := make(http.Header)
+	obj.writeheader(hdr)
+	newob := new(Object)
+	newob.fromResponse(hdr, nil)
+	for key, val := range pairs {
+		out := newob.GetIndex(key)
+		if out != val {
+			t.Errorf("Key-pair %q:%q retreived as %q:%q", key, val, key, out)
+		}
+	}
+}
+
 func TestObjectWriteHeader(t *testing.T) {
 	tm := time.Now()
 	obj := &Object{
