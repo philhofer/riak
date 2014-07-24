@@ -2,7 +2,5 @@ image: google/golang
 env:
  - GOPATH=/gopath
 script:
- - go install -tags 'riak'
- - go test -v -tags 'riak'
-services:
- - packrat386/riak:2.0
+ - go install
+ - go test -v
