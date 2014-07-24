@@ -1,4 +1,4 @@
-image: packrat386/golang-nsq
+image: google/golang
 env:
  - GOPATH=/gopath
 script:
