@@ -2,5 +2,5 @@ image: google/golang
 env:
  - GOPATH=/gopath
 script:
- - go install
+ - go build
  - go test -v
