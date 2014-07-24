@@ -1,6 +1,8 @@
 image: packrat386/golang-nsq
+env:
+ - GOPATH=/gopath
 script:
-	- go install -tags 'riak'
-	- go test -v -tags 'riak'
+ - go install -tags 'riak'
+ - go test -v -tags 'riak'
 services:
-	- packrat386/riak
+ - packrat386/riak
