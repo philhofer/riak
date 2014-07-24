@@ -1,0 +1,6 @@
+image: packrat386/golang-nsq
+script:
+	- go install -tags 'riak'
+	- go test -v -tags 'riak'
+services:
+	- packrat386/riak
