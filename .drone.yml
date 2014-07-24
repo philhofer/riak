@@ -5,4 +5,4 @@ script:
  - go install -tags 'riak'
  - go test -v -tags 'riak'
 services:
- - packrat386/riak:2.0
+ - packrat386/riak
