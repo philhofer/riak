@@ -5,4 +5,4 @@ script:
  - go build
  - go test -v -tags 'riak'
 services:
- - hectcastro/riak
+ - riak
